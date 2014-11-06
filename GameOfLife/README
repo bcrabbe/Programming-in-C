@@ -1,0 +1,5 @@
+A SDL based implementation of Conway's Game of Life.
+
+input.txt can be specified as a commandline argument to input a particular pattern.
+
+otherwise the intial pattern is random.
