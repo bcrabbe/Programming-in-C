@@ -13,6 +13,9 @@
 int **findPermutations(int *arrayToBeShuffled, int*numberOfPermutations);
 void freeList(int** permutations, int numberOfPermutations);
 char ** getDictionary();
+void foundWordLadder(char**stringLadder);
+int isWord(char * word, char ** dictionary, int dictionaryLength);
+void freeDict(char** dictionary, int dictionaryLength);
 
 int main(int argc, char **argv)
 {
@@ -20,7 +23,7 @@ int main(int argc, char **argv)
     int numberOfPermutations;
     int **permutations = findPermutations(a,&numberOfPermutations);
 
-    char  stringStart[5], stringTarget[5], stringLadder[5][5];
+    char  stringLadder[5][5];
     if(argc!=3)
     {
         printf("You must specify 2 words to ladder between\n");
@@ -29,46 +32,86 @@ int main(int argc, char **argv)
     }
     else
     {
-        strncpy(stringStart,argv[1],(size_t)5);
-        strncpy(stringTarget,argv[2],(size_t)5);
-        strncpy(stringLadder[0],stringStart,(size_t)5);
-        strncpy(stringLadder[4],stringTarget,(size_t)5);
-        printf("%s--> %s\n",stringStart,stringTarget);
+        strncpy(stringLadder[0],argv[1],(size_t)5);
+        strncpy(stringLadder[4],argv[2],(size_t)5);
+        printf("%s--> %s\n",stringLadder[0],stringLadder[4]);
     }
     int dictionaryLength;
     char ** dictionary = getDictionary(&dictionaryLength);
- 
-    int foundLadder=0;
-    int ladderSteps[5]={1,0,0,0,0};
+    int ladderFound=0;
     for(int i=1; i<=numberOfPermutations; ++i)
     {
-        for(int j=0; j<4; ++j)
+        strncpy(stringLadder[1],stringLadder[0],(size_t)5);
+        int positionToChange=permutations[i][0];//position 1 2 3 or 4
+        stringLadder[1][positionToChange-1]=stringLadder[4][positionToChange-1];
+        
+        if(isWord(stringLadder[1],dictionary,dictionaryLength))
         {
-            strncpy(stringLadder[j+1],stringTarget,(size_t)5);
-            int positionToChange=permutations[i][j];
-            stringLadder[j+1][positionToChange-1]=stringTarget[positionToChange-1];
+            strncpy(stringLadder[2],stringLadder[1],(size_t)5);
+            int positionToChange=permutations[i][1];//position 1 2 3 or 4
+            stringLadder[2][positionToChange-1]=stringLadder[4][positionToChange-1];
             
-            for(int dictIter=1; dictIter<=dictionaryLength; ++dictIter)
+            if(isWord(stringLadder[2],dictionary,dictionaryLength))
             {
 
-                if(strcmp(dictionary[dictIter],stringLadder[j+1] )==0)
+                strncpy(stringLadder[3],stringLadder[2],(size_t)5);
+                int positionToChange=permutations[i][2];//position 1 2 3 or 4
+                stringLadder[3][positionToChange-1]=stringLadder[4][positionToChange-1];
+                
+                if(isWord(stringLadder[3],dictionary,dictionaryLength))
                 {
-                    ladderSteps[j+1]=1;
+                    
+              
+                    ladderFound=1;
+                    printf("found ladder: %d %d %d %d\n\n ",permutations[i][0],permutations[i][1], permutations[i][2], permutations[i][3] );
+                   
+                    for(int i=0; i<4; ++i)
+                    {
+                        printf("%s ---> ",stringLadder[i]);
+                        
+                    }
+                    printf("%s\n",stringLadder[4]);
                     break;
-                }
-                else
-                {
-                    ladderSteps[j+1]=0;
-
+                
+                    
                 }
             }
-            
+
         }
-        
     }
-   
+    if(ladderFound==0)
+    {
+        printf("No ladder found \n\n");
+
+    }
     
-    freeList(permutations,numberOfPermutations);
+    //freeList(permutations,numberOfPermutations);
+    //freeDict(dictionary,dictionaryLength);
+
+    return 0;
+}
+void foundWordLadder(char**stringLadder)
+{
+    printf("found ladder:\n\n");
+    for(int i=0; i<4; ++i)
+    {
+        printf("%s ---> ",stringLadder[i]);
+
+    }
+    printf("%s\n",stringLadder[4]);
+
+}
+int isWord(char * word, char ** dictionary, int dictionaryLength)
+{
+    
+    for(int dictIter=1; dictIter<=dictionaryLength; ++dictIter)
+    {
+        if(strcmp(dictionary[dictIter],word )==0)
+        {
+            return 1;
+        }
+        else{}//do nothing
+    }
     return 0;
 }
 
@@ -163,4 +206,12 @@ void freeList(int** permutations, int numberOfPermutations)
         free(permutations[i]);
     }
     free(permutations);
+}
+void freeDict(char** dictionary, int dictionaryLength)
+{
+    for(int i=0; i<dictionaryLength;++i)
+    {
+        free(dictionary[i]);
+    }
+    free(dictionary);
 }
