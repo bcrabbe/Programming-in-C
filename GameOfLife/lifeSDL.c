@@ -166,7 +166,8 @@ unsigned char **createGrid( int dimX, int dimY)
 		exit(0);
 	}
 	//here we allocate the proper array which will hold each cell status
-    grid[0]=(unsigned char *)calloc((size_t)(numberOfRows*numberOfColumns), sizeof(unsigned char));
+    grid[0]=(unsigned char *)cal
+    loc((size_t)(numberOfRows*numberOfColumns), sizeof(unsigned char));
 	if(grid[0]==NULL)
 	{
 		printf("calloc failed\n");
