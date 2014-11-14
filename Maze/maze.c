@@ -11,6 +11,16 @@ Recursive maze solver
 #include <stdlib.h>
 #include <time.h>
 #include <SDL2/SDL.h>
+#include <assert.h>
+#define NDEBUG
+typedef enum wall
+{
+    topVertical,
+    rightHorizontal,
+    bottomVertical,
+    leftHorizontal
+} wall;
+
 
 void freeGrid( unsigned char **grid);
 unsigned char **createGrid( int dimX, int dimY);
@@ -20,16 +30,27 @@ int pathFinder(int i, int j, unsigned char **maze, int dimX, int dimY);
 void printMaze( unsigned char **maze, int dimX, int dimY);
 void testPathFinder(int i, int j, unsigned char **maze);
 unsigned char ** initialiseFromFile(const char * fileName, int *dimensionX, int *dimensionY);
+unsigned char ** generateMaze( int *dimensionX, int *dimensionY);
+unsigned char ** generateRandomMaze( int *dimensionX, int *dimensionY);
+int divideChamber(unsigned char ** maze, int minX, int minY, int chamberWidth, int chamberHeight);
 
 int main(int argc, const char * argv[])
 {
-    int dimensionX,dimensionY;
-    unsigned char ** maze=NULL;
+    srand(time(NULL));
+    int dimensionX,dimensionY;//number of columns and rows respectively
+    unsigned char ** maze=NULL;//2d charrecter array for the maze
     if(argc>=2 && strcmp(argv[1],"RANDOM")!=0)//if user supplied atleast one additional cmd line arg
-    {                                         //and this wasn't 'RANDOM'
-        maze = initialiseFromFile(argv[1],&dimensionX,&dimensionY);            //then it should have been a file path which we init our maze from
-    }
-        
+    {                          //and this wasn't 'RANDOM'
+        maze = initialiseFromFile(argv[1],&dimensionX,&dimensionY);
+    }                          //then it should have been a file path which we init our maze from
+
+    else if(argc>=2 && strcmp(argv[1],"RANDOM")==0)
+    {               //if user supplied atleast one additional cmd line arg and this was 'RANDOM'
+        maze = generateRandomMaze(&dimensionX,&dimensionY);
+        printMaze(maze, dimensionX, dimensionY);
+
+    }               //then generate random maze:
+    /*
     int startX, startY;
     findStart(&startX, &startY, maze, dimensionX, dimensionY);
     printf("\nstart: %d %d\n",startX,startY);
@@ -43,9 +64,142 @@ int main(int argc, const char * argv[])
         printf("\nfound no exits");
     }
 
-    printMaze(maze, dimensionX, dimensionY);
+    printMaze(maze, dimensionX, dimensionY);*/
     return 0;
 }
+
+unsigned char ** generateRandomMaze( int *dimensionX, int *dimensionY)
+{
+    printf("Please enter the dimensions of the maze you would like to generate: formated x y \n");
+    if(scanf("%d %d",dimensionX,dimensionY)!=2 || *dimensionX<=5 || *dimensionY<=5)
+    {
+        printf("failed to read dimensions, please enter two integers greater than 5 \n");
+    }
+    unsigned char ** maze = createGrid(*dimensionX, *dimensionY);
+    
+    if(divideChamber(maze, 1, 1, *dimensionX, *dimensionY)==1)
+    {
+        return maze;
+    }
+    else
+    {
+        fprintf(stderr,"random maze generator failed\n");
+        exit(5);
+    }
+}
+
+void testDivideChamber(unsigned char ** maze, int numberOfDivides, int verticalXcoord,
+                        int horizontalYcoord )
+{
+    printf("\n>>>>>>>>>>>>>divide mase call number %d\n",numberOfDivides);
+    printf(">>>>>>>>>>>>>>>verticalXcoord %d horizontalYcoord %d\n",verticalXcoord,horizontalYcoord);
+
+    printMaze(maze, 15, 15);
+}
+
+int divideChamber(unsigned char ** maze, int minX, int minY, int chamberWidth, int chamberHeight)
+{
+    static int numberOfDivides;
+    ++numberOfDivides;
+
+    if(chamberWidth<5 || chamberHeight<5)
+    {
+        return 1;
+    }
+    
+    int verticalXcoord = minX + rand()%(chamberWidth);//the xcoord of the vertical dividing line
+    int horizontalYcoord = minY + rand()%(chamberHeight);//the y coord of the horizontal dividing line
+    
+    int wallToLeaveWhole = rand()%4 ;//random number 0-3 picks one of the 4 wall segments
+    int wallCounter=0;               //iterates as we draw walls
+    int spaceToLeave;
+    
+    /*********draw top part of vertical wall:**********/
+    //line goes from top of chamber to the y coord of the horizontalLine,
+    //a random num between these bounds is:
+    spaceToLeave = minY + rand()%(horizontalYcoord-minY+1);
+    assert(spaceToLeave<= horizontalYcoord);
+    for(int j=minY; j<=horizontalYcoord; ++j)
+    {
+        if(j==spaceToLeave && wallCounter!=wallToLeaveWhole)
+        {
+            maze[j][verticalXcoord]=' ';
+
+        }
+        else maze[j][verticalXcoord]='#';
+    }
+    ++wallCounter;
+    /*********draw bottom part of vertical wall:**********/
+    //line goes from the y coord of the horizontal Line to ymin+chamberHeight,
+    //a random num between these bounds is:
+    spaceToLeave = horizontalYcoord + rand()%(minY+chamberHeight-horizontalYcoord+1);
+    assert(spaceToLeave <= minY + chamberHeight);
+    for(int j=horizontalYcoord; j<=minY+chamberHeight; ++j)
+    {
+        if(j==spaceToLeave && wallCounter!=wallToLeaveWhole)
+        {
+            maze[j][verticalXcoord]=' ';
+            
+        }
+        else maze[j][verticalXcoord]='#';
+    }
+    ++wallCounter;
+    /*********draw left part of Horizontal wall:**********/
+    //line goes from minX to the x coord of the vertical Line
+    //a random num between these bounds is:
+    spaceToLeave = minX + rand()%(verticalXcoord-minX+1);
+    assert(spaceToLeave <= verticalXcoord);
+    for(int i=minX; i<=verticalXcoord; ++i)
+    {
+        if(i==spaceToLeave && wallCounter!=wallToLeaveWhole)
+        {
+            maze[horizontalYcoord][i]=' ';
+            
+        }
+        else maze[horizontalYcoord][i]='#';
+    }
+    ++wallCounter;
+    /*********draw right part of horizontal wall:**********/
+    //line goes from the x coord of the vertical Line to minX+chamberWidth,
+    //a random number between these bounds is:
+    spaceToLeave = verticalXcoord + rand()%(minX+chamberWidth-verticalXcoord+1);
+    assert(spaceToLeave <= minX + chamberWidth);
+    for(int i=verticalXcoord; i<= minX + chamberWidth; ++i)
+    {
+        if(i==spaceToLeave && wallCounter!=wallToLeaveWhole)
+        {
+            maze[horizontalYcoord][i]=' ';
+            
+        }
+        else maze[horizontalYcoord][i]='#';
+    }
+    testDivideChamber(maze, numberOfDivides,verticalXcoord,horizontalYcoord );
+
+    // Now call divide again the 4 chambers
+    if(
+       divideChamber(maze, minX, minY, verticalXcoord-minX, horizontalYcoord-minY)
+       &&
+       divideChamber(maze, verticalXcoord, minY, minX+chamberWidth-verticalXcoord,
+                     horizontalYcoord-minY)
+        &&
+        divideChamber(maze,verticalXcoord,horizontalYcoord,
+                      minX+chamberWidth-verticalXcoord,
+                      minY+chamberHeight-horizontalYcoord)
+        &&
+        divideChamber(maze, minX, horizontalYcoord,verticalXcoord-minX,
+                      minY+chamberHeight-horizontalYcoord)
+       )
+        return 1;
+
+
+    else
+    {
+        fprintf(stderr,"divide chamber call %d failed\n",numberOfDivides);
+        exit(5);
+    }
+}
+
+
 
 void testPathFinder(int i, int j, unsigned char **maze)
 {
@@ -220,7 +374,7 @@ void freeGrid( unsigned char **grid)
 void readFile( unsigned char **grid, int dimensionX, int dimensionY, FILE *FP)
 {
     printf("\n input FILE:\n");
-    int i,j;
+    int i,j,newlineRead;
     char fileChar;
     for(j=1; j<=dimensionY; ++j)
     {
@@ -232,8 +386,9 @@ void readFile( unsigned char **grid, int dimensionX, int dimensionY, FILE *FP)
                 fclose(FP);
 				exit(2);
 			}
-            if(fileChar == '\n')//deals with stray new lines left in the buffer
+            while(fileChar == '\n'||fileChar == '\r')//deals with the new lines
             {
+                newlineRead=1;
                 if(fscanf(FP,"%c", &fileChar)!=1)
 				{
 					fprintf(stderr,"in readFile fscanf failed");
@@ -252,7 +407,7 @@ void readFile( unsigned char **grid, int dimensionX, int dimensionY, FILE *FP)
             }
             else
             {
-                fprintf(stderr,"read %c for %d,%d element\n",fileChar,i,j);
+                fprintf(stderr,"read %d/%c for %d,%d element\n",fileChar,fileChar,i,j);
                 fprintf(stderr,"This is incorrect file format\n");
                 fclose(FP);
                 exit(2);
@@ -296,9 +451,14 @@ void printMaze( unsigned char **maze, int dimX, int dimY)
 {
     printf("\n");
     int i,j;
+    for(i=0; i<=dimX; ++i)
+    {
+        printf("%x",i);
+    }
     for(j=1; j<=dimY; ++j)
     {
         printf("\n");
+        printf("%x",j);
         for(i=1; i<=dimX; ++i)
         {
             printf("%c",maze[j][i]);
