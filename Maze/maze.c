@@ -13,14 +13,19 @@ Recursive maze solver
 #include <SDL2/SDL.h>
 #include <assert.h>
 #define NDEBUG
-typedef enum wall
-{
-    topVertical,
-    rightHorizontal,
-    bottomVertical,
-    leftHorizontal
-} wall;
 
+#define WWIDTH 600
+#define WHEIGHT 600
+#define RECTSIZE 20
+#define MILLISECONDDELAY 500
+#define SDL_8BITCOLOUR 256
+
+typedef struct SDL_Simplewin
+{
+	SDL_bool finished;
+	SDL_Window *win;
+	SDL_Renderer *renderer;
+} SDL_Simplewin;
 
 void freeGrid( unsigned char **grid);
 unsigned char **createGrid( int dimX, int dimY);
@@ -33,27 +38,44 @@ unsigned char ** initialiseFromFile(const char * fileName, int *dimensionX, int 
 unsigned char ** generateMaze( int *dimensionX, int *dimensionY);
 unsigned char ** generateRandomMaze( int *dimensionX, int *dimensionY);
 int divideChamber(unsigned char ** maze, int minX, int minY, int chamberWidth, int chamberHeight);
+int graphicsAreOn(int sdl);
+SDL_Simplewin * getSdlWindowPtr(SDL_Simplewin *sw);
+void doGraphics(unsigned char **maze,int dimensionX, int dimensionY, SDL_Simplewin *sw);
+
+
+
+void Neill_SDL_Init(SDL_Simplewin *sw);
+void Neill_SDL_Events(SDL_Simplewin *sw);
 
 int main(int argc, const char * argv[])
 {
     srand(time(NULL));
     int dimensionX,dimensionY;//number of columns and rows respectively
     unsigned char ** maze=NULL;//2d charrecter array for the maze
-    if(argc>=2 && strcmp(argv[1],"RANDOM")!=0)//if user supplied atleast one additional cmd line arg
-    {                          //and this wasn't 'RANDOM'
+    if( argc==3 && strcmp(argv[2],"SDL")==0)
+    {
+        graphicsAreOn(1);//set graphics on
+        SDL_Simplewin sw;
+        Neill_SDL_Init(&sw);
+        getSdlWindowPtr(&sw);//store pointer to sw
+    }
+    if(argc>=2 && strcmp(argv[1],"RANDOM")!=0)
+    {
         maze = initialiseFromFile(argv[1],&dimensionX,&dimensionY);
-    }                          //then it should have been a file path which we init our maze from
-
+        printMaze(maze, dimensionX, dimensionY);
+    }
     else if(argc>=2 && strcmp(argv[1],"RANDOM")==0)
-    {               //if user supplied atleast one additional cmd line arg and this was 'RANDOM'
+    {
         maze = generateRandomMaze(&dimensionX,&dimensionY);
         printMaze(maze, dimensionX, dimensionY);
-
-    }               //then generate random maze:
-    /*
+        
+        if(graphicsAreOn(0))    SDL_Delay(100000);
+    }
+    
     int startX, startY;
     findStart(&startX, &startY, maze, dimensionX, dimensionY);
-    printf("\nstart: %d %d\n",startX,startY);
+    maze[startY][startX]='s';
+    
     int foundPath = pathFinder(startX, startY, maze, dimensionX, dimensionY);
     if(foundPath)
     {
@@ -64,8 +86,132 @@ int main(int argc, const char * argv[])
         printf("\nfound no exits");
     }
 
-    printMaze(maze, dimensionX, dimensionY);*/
+    printMaze(maze, dimensionX, dimensionY);
+    
+    if(graphicsAreOn(0))
+    {
+        SDL_Simplewin * sw = getSdlWindowPtr(NULL);//retreive simplewin ptr
+        while(!sw->finished)
+        {
+            Neill_SDL_Events(sw);
+        }
+    }
+
     return 0;
+
+}
+
+int graphicsAreOn(int setOn)
+{
+    static int graphicsAreOn;
+    if(setOn)
+        graphicsAreOn=1;
+        
+    return graphicsAreOn;
+}
+
+SDL_Simplewin * getSdlWindowPtr(SDL_Simplewin *sw)
+{
+    static SDL_Simplewin * window;
+    
+    if(sw!=NULL)
+    {
+        window = sw;
+    }
+    
+    return window;
+    
+}
+void Neill_SDL_Init(SDL_Simplewin *sw)
+{
+	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+		fprintf(stderr, "\nUnable to initialize SDL:  %s\n", SDL_GetError());
+		SDL_Quit();
+		exit(1);
+	}
+	
+	sw->finished = 0;
+	
+	sw->win= SDL_CreateWindow("SDL Window",
+							  SDL_WINDOWPOS_UNDEFINED,
+							  SDL_WINDOWPOS_UNDEFINED,
+							  WWIDTH, WHEIGHT,
+							  SDL_WINDOW_SHOWN);
+	if(sw->win == NULL){
+		fprintf(stderr, "\nUnable to initialize SDL Window:  %s\n", SDL_GetError());
+		SDL_Quit();
+		exit(1);
+	}
+	
+	sw->renderer = SDL_CreateRenderer(sw->win, -1, 0);
+	if(sw->renderer == NULL){
+		fprintf(stderr, "\nUnable to initialize SDL Renderer:  %s\n", SDL_GetError());
+		SDL_Quit();
+		exit(1);
+	}
+	
+    SDL_SetRenderDrawColor(sw->renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+	SDL_RenderClear(sw->renderer);
+	SDL_RenderPresent(sw->renderer);
+	
+}
+
+void doGraphics(unsigned char **maze,int dimensionX, int dimensionY, SDL_Simplewin *sw)
+{
+    SDL_Rect rectangle;
+    
+    SDL_Delay(MILLISECONDDELAY);
+	rectangle.w = WWIDTH/dimensionX;
+	rectangle.h = WHEIGHT/dimensionY;
+	int i,j;
+    for(j=0; j<=dimensionY+1; ++j)
+    {
+        
+        for(i=0; i<=dimensionX+1; ++i)
+        {
+            Neill_SDL_Events(sw);
+			if(maze[j][i]=='#' )
+			{
+                SDL_SetRenderDrawColor(sw->renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+			}
+			else if(maze[j][i]==' ' )
+			{
+                SDL_SetRenderDrawColor(sw->renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+			}
+            else if(maze[j][i]=='s' )
+			{
+                SDL_SetRenderDrawColor(sw->renderer, 255, 0, 0, SDL_ALPHA_OPAQUE);
+			}
+            else if(maze[j][i]=='.')
+            {
+                SDL_SetRenderDrawColor(sw->renderer, 0, 255, 0, SDL_ALPHA_OPAQUE);
+            }
+			rectangle.x = (i-1)*rectangle.w;
+			rectangle.y = (j-1)*rectangle.h;
+			SDL_RenderFillRect(sw->renderer, &rectangle);
+        }
+    }
+	SDL_RenderPresent(sw->renderer);
+	SDL_UpdateWindowSurface(sw->win);
+	Neill_SDL_Events(sw);
+	if(sw->finished)
+	{
+		exit(0);
+	}
+}
+// Gobble all events & ignore most
+void Neill_SDL_Events(SDL_Simplewin *sw)
+{
+	SDL_Event event;
+	while(SDL_PollEvent(&event))
+	{
+		switch (event.type)
+		{
+			case SDL_QUIT:
+            case SDL_KEYDOWN:
+				sw->finished = 1;
+		}
+    }
 }
 
 unsigned char ** generateRandomMaze( int *dimensionX, int *dimensionY)
@@ -95,6 +241,7 @@ void testDivideChamber(unsigned char ** maze, int numberOfDivides, int verticalX
     printf(">>>>>>>>>>>>>>>verticalXcoord %d horizontalYcoord %d\n",verticalXcoord,horizontalYcoord);
 
     printMaze(maze, 15, 15);
+    
 }
 
 int divideChamber(unsigned char ** maze, int minX, int minY, int chamberWidth, int chamberHeight)
@@ -102,7 +249,7 @@ int divideChamber(unsigned char ** maze, int minX, int minY, int chamberWidth, i
     static int numberOfDivides;
     ++numberOfDivides;
 
-    if(chamberWidth<5 || chamberHeight<5)
+    if(chamberWidth<6 || chamberHeight<6)
     {
         return 1;
     }
@@ -173,7 +320,7 @@ int divideChamber(unsigned char ** maze, int minX, int minY, int chamberWidth, i
         }
         else maze[horizontalYcoord][i]='#';
     }
-    testDivideChamber(maze, numberOfDivides,verticalXcoord,horizontalYcoord );
+    //testDivideChamber(maze, numberOfDivides,verticalXcoord,horizontalYcoord );
 
     // Now call divide again the 4 chambers
     if(
@@ -449,16 +596,21 @@ unsigned char **createGrid( int dimX, int dimY)
 
 void printMaze( unsigned char **maze, int dimX, int dimY)
 {
+    if(graphicsAreOn(0))
+    {
+        SDL_Simplewin * sw = getSdlWindowPtr(NULL);
+        doGraphics(maze, dimX, dimY, sw);
+    }
     printf("\n");
     int i,j;
-    for(i=0; i<=dimX; ++i)
+   /* for(i=0; i<=dimX; ++i)
     {
         printf("%x",i);
-    }
+    }*/
     for(j=1; j<=dimY; ++j)
     {
         printf("\n");
-        printf("%x",j);
+        // printf("%x",j);
         for(i=1; i<=dimX; ++i)
         {
             printf("%c",maze[j][i]);
