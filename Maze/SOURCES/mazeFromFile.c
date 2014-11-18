@@ -8,7 +8,11 @@
 
 #include "maze.h"
 
-
+/*
+ * deals with maze input from file
+ * reads dimensions from top line and calls createMaze to allocate grid
+ * then calls readFile to read in the initial state of the grid
+ */
 unsigned char ** initialiseFromFile(const char * fileName, int *dimensionX, int *dimensionY)
 {
     
@@ -18,7 +22,7 @@ unsigned char ** initialiseFromFile(const char * fileName, int *dimensionX, int 
     FP = fopen(fileName,"r");
     if( FP==NULL )
     {
-        fprintf(stderr,"failed to open file\n");
+        fprintf(stderr,"failed to open file %s \n",fileName);
         exit(1);
     }
     if(fscanf(FP,"%d %d", dimensionX, dimensionY)!=2)
@@ -103,7 +107,10 @@ void readFile( unsigned char **grid, int dimensionX, int dimensionY, FILE *FP)
     }
 }
 
-
+/* For mazes initialised from file,
+* Finds the gap in the outer wall of the maze closest to the top left hand corner 
+* if one exists.
+*/
 void findStart(int * startX, int * startY, unsigned char ** maze, int dimX, int dimY )
 {
     //first check top row and leftmost column simultaneously to find the space nearest the top left corner

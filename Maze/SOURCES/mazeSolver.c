@@ -8,7 +8,7 @@
 
 #include "maze.h"
 
-
+/* Recursive maze solver*/
 int pathFinder(int i, int j, unsigned char **maze, int dimX, int dimY)
 {
     if(graphicsAreOn(0))
@@ -16,8 +16,9 @@ int pathFinder(int i, int j, unsigned char **maze, int dimX, int dimY)
         SDL_Simplewin * sw = getSdlWindowPtr(NULL);
         doGraphics(maze, dimX, dimY, sw);
     }
-    //testPathFinder(i,j,maze);
-    
+#if ENABLE_TEST_PATH_FINDER
+    testPathFinder(i,j,maze);
+#endif 
     if(maze[j][i]=='#'||maze[j][i]=='.'||maze[j][i]=='x')//if element i,j is wall then we cant move here so...
     {
         return 0;//return false
@@ -39,26 +40,36 @@ int pathFinder(int i, int j, unsigned char **maze, int dimX, int dimY)
         }
     }
     if(pathFinder(i+1, j, maze, dimX, dimY)==1) return 1;//move to the right
-                                                         //testPathFinder(i,j,maze);
+#if ENABLE_TEST_PATH_FINDER
+	testPathFinder(i,j,maze);
+#endif
     if(pathFinder(i, j-1, maze, dimX, dimY)==1) return 1;//move downwards
-                                                         //testPathFinder(i,j,maze);
+#if ENABLE_TEST_PATH_FINDER
+	testPathFinder(i,j,maze);
+#endif
     if(pathFinder(i, j+1, maze, dimX, dimY)==1) return 1;//move up
-                                                         //testPathFinder(i,j,maze);
+#if ENABLE_TEST_PATH_FINDER
+	testPathFinder(i,j,maze);
+#endif
     if(pathFinder(i-1, j, maze, dimX, dimY)==1) return 1;//move left
-                                                         //testPathFinder(i,j,maze);
+#if ENABLE_TEST_PATH_FINDER
+	testPathFinder(i,j,maze);
+#endif
     
     //if we get here then i,j is not part of solution path
     //so we un mark it:
-    
-    if(maze[j][i]!='s')maze[j][i]='x';
-    
+    if(maze[j][i]!='s')
+	{
+		maze[j][i]='x';
+	}    
     return 0;
 }
 
-
+/*testing function for pathFinder
+  Enable by setting ENABLE_TEST_PATH_FINDER to 1 in maze.h*/
 void testPathFinder(int i, int j, unsigned char **maze)
 {
-    printf("moved to (%d,%d)",i, j);
-    printf("  it was %c\n",maze[j][i]);
+    printf(">>>>>moved to (%d,%d)",i, j);
+    printf(">>>>>it was %c\n",maze[j][i]);
     
 }

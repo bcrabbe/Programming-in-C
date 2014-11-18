@@ -45,8 +45,8 @@ void doGraphics(unsigned char **maze,int dimensionX, int dimensionY, SDL_Simplew
     SDL_Rect rectangle;
     
     SDL_Delay(MILLISECONDDELAY);
-	rectangle.w = WWIDTH/dimensionX;
-	rectangle.h = WHEIGHT/dimensionY;
+	rectangle.w = (WWIDTH/dimensionX);
+	rectangle.h = (WHEIGHT/dimensionY);
 	int i,j;
     for(j=0; j<=dimensionY+1; ++j)
     {
@@ -89,6 +89,7 @@ void doGraphics(unsigned char **maze,int dimensionX, int dimensionY, SDL_Simplew
 	Neill_SDL_Events(sw);
 	if(sw->finished)
 	{
+		fprintf(stderr,"Graphics window closed. Exiting program.\n");
 		exit(0);
 	}
 }

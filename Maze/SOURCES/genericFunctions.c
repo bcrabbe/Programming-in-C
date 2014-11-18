@@ -9,11 +9,10 @@
 #include "maze.h"
 
 
-/* allocates dynamic 2d array using pointer to array of pointers to rows
- once allocated grid may be passed to function and accessed using standard grid[j][i]*/
+/* allocates dynamic 2d array using pointer to array of pointers to rows*/
 unsigned char **createMaze( int dimX, int dimY)
 {
-    int	numberOfRows=dimY+2,//extra two elements to deal with the edge conditions
+    int	numberOfRows=dimY+2,//extra elements to store one cell thick outside edge
     numberOfColumns=dimX+2;
     unsigned char **maze=NULL;
 	//here we allocate an array to hold the pointers (which will point to the start of each row)
@@ -23,15 +22,16 @@ unsigned char **createMaze( int dimX, int dimY)
 		printf("calloc failed\n");
 		exit(1);
 	}
-	//here we allocate the proper array which will hold each cell status
+	//here we allocate the proper array which will hold each cell state
     maze[0]=(unsigned char *)calloc((size_t)(numberOfRows*numberOfColumns), sizeof(unsigned char));
+
 	if(maze[0]==NULL)
 	{
 		printf("calloc failed\n");
 		exit(1);
 	}
 	// here we set each pointer in the first array to the first element of each row
-    for(int i=1; i<=(dimY+2); ++i)
+    for(int i=1; i<numberOfRows; ++i)
     {
         maze[i]=maze[i-1]+numberOfColumns;
     }
@@ -39,8 +39,7 @@ unsigned char **createMaze( int dimX, int dimY)
     for(int i=0; i<=dimX+1; ++i)
     {
         maze[0][i]=' ';
-        maze[dimY+1][i]=' ';
-        
+        maze[dimY+1][i]=' ';   
     }
     for(int j=0; j<=dimY+1; ++j)
     {
@@ -53,10 +52,10 @@ unsigned char **createMaze( int dimX, int dimY)
 
 
 /* Frees a grid allocated with allocateGrid function*/
-void freeGrid( unsigned char **grid)
+void freeMaze( unsigned char **maze)
 {
-    free((grid[0]));//frees the large char array malloc
-    free((grid));//frees the smaller pointer array malloc
+    free((maze[0]));//frees the large char array calloc
+    free((maze));//frees the smaller pointer array calloc
 }
 
 
@@ -70,14 +69,18 @@ void printMaze( unsigned char **maze, int dimX, int dimY)
         doGraphics(maze, dimX, dimY, sw);
     }
     printf("\n");
-    /* for(int i=0; i<=dimX; ++i)
+#if ENABLE_TEST_DIVIDE_CHAMBER
+     for(int i=0; i<=dimX; ++i)
      {
-     printf("%x",i);
-     }*/
+    	 printf("%x",i);
+     }
+#endif
     for(int j=0; j<=dimY+1; ++j)
     {
         printf("\n");
-        // printf("%x",j);
+#if ENABLE_TEST_DIVIDE_CHAMBER
+		printf("%x",j);
+#endif
         for(int i=0; i<=dimX+1; ++i)
         {
             if(maze[j][i]=='x')
@@ -88,4 +91,13 @@ void printMaze( unsigned char **maze, int dimX, int dimY)
         }
     }
     printf("\n");
+}
+
+void usageError()
+{
+	fprintf(stderr,"\nERROR.\n");
+	fprintf(stderr,"Run program with a cmdline arg stating either a txt file which contains a maze,\n");
+    fprintf(stderr,"or RANDOM.\n");
+    fprintf(stderr,"To run with graphics type SDL as a argument following these.\n\n");
+	exit(1);
 }
