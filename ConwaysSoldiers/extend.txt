@@ -1,0 +1,9 @@
+Extended Version
+
+
+I have used a novel data structure to store every possible ancestor-chain of each board.
+My program will find every possible route to the target and then let the user chose which to view in 
+a menu system. The menu works better with some text to explain the choices, however I realised SDL_ttf 
+(the extened SDL library needed for text) was not installed on the lab machines, so I have also made 
+a purely colour based version. Both are included, if you wish to try it with the ttf you can set enable ttf 
+in the graphics window. 
